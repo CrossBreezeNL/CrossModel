@@ -12,6 +12,7 @@ import {
    EdgeCreationTool,
    FeedbackEmitter,
    GEdge,
+   GEdgeSchema,
    GLSPActionDispatcher,
    GModelElement,
    HoverFeedbackAction,
@@ -25,7 +26,8 @@ import {
 } from '@eclipse-glsp/client';
 import {
    DrawFeedbackEdgeAction,
-   RemoveFeedbackEdgeAction
+   RemoveFeedbackEdgeAction,
+   defaultFeedbackEdgeSchema
 } from '@eclipse-glsp/client/lib/features/tools/edge-creation/dangling-edge-feedback';
 import { injectable } from '@theia/core/shared/inversify';
 
@@ -105,9 +107,17 @@ export class SystemEdgeCreationToolMouseListener extends DragAwareMouseListener 
          if (dragDistance > 3) {
             // assign source if possible
             this.source = this.dragContext.element.id;
+            let edgeSchema: Partial<GEdgeSchema> | undefined = undefined;
+            // add css classes to the edge if specified in trigger action
+            if (this.triggerAction.args?.cssClasses) {
+               const cssClasses = this.triggerAction.args?.cssClasses.toString().split(' ');
+               defaultFeedbackEdgeSchema.cssClasses?.forEach(cssClass => cssClasses.push(cssClass));
+               edgeSchema = { cssClasses };
+            }
+
             this.feedbackEdgeFeedback
                .add(
-                  DrawFeedbackEdgeAction.create({ elementTypeId: this.triggerAction.elementTypeId, sourceId: this.source }),
+                  DrawFeedbackEdgeAction.create({ elementTypeId: this.triggerAction.elementTypeId, sourceId: this.source, edgeSchema }),
                   RemoveFeedbackEdgeAction.create()
                )
                .submit();
